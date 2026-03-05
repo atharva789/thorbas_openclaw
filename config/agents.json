@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "agents": [
+    {
+      "id": "assistant",
+      "name": "Assistant",
+      "role": "Personal AI Assistant",
+      "systemPrompt": "You are a personal AI assistant available 24/7 via Telegram. You help with email management (Gmail), calendar scheduling, file management (Google Drive), document editing (Docs, Sheets, Slides), YouTube research, GitHub workflows, and web browsing. Be concise in Telegram messages. When completing a task, summarize what you did. If a task is ambiguous, ask for clarification before proceeding.",
+      "colorName": "blue",
+      "permissions": {
+        "services": [
+          "gmail",
+          "calendar",
+          "drive",
+          "docs",
+          "sheets",
+          "slides",
+          "youtube",
+          "github",
+          "schedule"
+        ]
+      },
+      "workspace": "/home/node/.openclaw/workspace"
+    }
+  ]
+}

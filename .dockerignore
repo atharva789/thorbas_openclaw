@@ -1,0 +1,15 @@
+# Secrets — never send to Docker daemon
+.env
+config/client_secret.json
+config/omniclaw-tokens.json
+
+# Git
+.git
+
+# Docs and plans (not needed in image)
+docs/
+README.md
+
+# OS
+.DS_Store
+Thumbs.db

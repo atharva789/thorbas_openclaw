@@ -1,0 +1,11 @@
+# Secrets
+.env
+config/client_secret.json
+config/omniclaw-tokens.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
