@@ -1,4 +1,4 @@
-# OpenClaw + Omniclaw — Hetzner Deployment
+# OpenClaw + Omniclaw
 
 Personal AI assistant accessible via Telegram with Google Workspace, GitHub, and web browsing tools.
 
@@ -15,25 +15,55 @@ Personal AI assistant accessible via Telegram with Google Workspace, GitHub, and
 
 ## Prerequisites
 
-- Hetzner CX23 VPS (or similar: Ubuntu, 4GB+ RAM)
+- **Either** a Hetzner CX23 VPS (Ubuntu, 4GB+ RAM) **or** a Mac with Docker Desktop
 - Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
 - Anthropic API Key (from [console.anthropic.com](https://console.anthropic.com))
 - Google Cloud OAuth credentials (`client_secret.json`)
+- For Mac: [ngrok](https://ngrok.com) with an auth token (so Telegram can reach you)
 
-## Quick Start
+## Quick Start — macOS
 
 ```bash
-# On your VPS:
-git clone https://github.com/<your-user>/omniclaw-deploy.git
-cd omniclaw-deploy
-chmod +x setup.sh
-./setup.sh
+git clone https://github.com/atharva789/thorbas_openclaw.git
+cd thorbas_openclaw
+chmod +x setup-mac.sh
+./setup-mac.sh
 
 # Edit secrets:
 nano .env
 
-# Upload Google OAuth credentials:
-# (from your laptop)
+# Copy Google OAuth credentials:
+cp /path/to/client_secret.json local-config/
+
+# Start:
+docker compose up -d
+
+# One-time Google OAuth (opens in your browser):
+docker compose exec openclaw-gateway openclaw plugins config omniclaw
+
+# Start ngrok tunnel (for Telegram):
+ngrok http 18789
+
+# Add Telegram:
+docker compose exec openclaw-gateway \
+  openclaw channels add --channel telegram --token YOUR_BOT_TOKEN
+
+# Keep Mac awake:
+caffeinate -dims
+```
+
+## Quick Start — Ubuntu VPS (Hetzner CX23)
+
+```bash
+git clone https://github.com/atharva789/thorbas_openclaw.git
+cd thorbas_openclaw
+chmod +x setup-vps.sh
+./setup-vps.sh
+
+# Edit secrets:
+nano .env
+
+# Upload Google OAuth credentials (from your laptop):
 scp client_secret.json user@vps:/opt/openclaw/config/
 
 # Start:
@@ -41,10 +71,10 @@ docker compose up -d
 
 # Add Telegram:
 docker compose exec openclaw-gateway \
-  openclaw channels add --channel telegram --token YOUR_BOT_TOKEN_HERE
+  openclaw channels add --channel telegram --token YOUR_BOT_TOKEN
 
 # One-time Google OAuth (from laptop):
-ssh -L 9753:localhost:9753 user@vps
+ssh -L 9753:localhost:9753 user@<vps-ip>
 docker compose exec openclaw-gateway openclaw plugins config omniclaw
 ```
 
@@ -61,7 +91,8 @@ See `docs/plans/2026-03-04-hetzner-deployment-design.md` for the full design.
 | `Dockerfile` | Custom image: OpenClaw + Chromium + Omniclaw |
 | `docker-compose.yml` | Container orchestration |
 | `.env.example` | Secrets template |
-| `setup.sh` | One-command VPS provisioner |
+| `setup-mac.sh` | macOS setup (Docker Desktop + ngrok) |
+| `setup-vps.sh` | Ubuntu VPS setup (Hetzner CX23) |
 | `config/openclaw.json` | Gateway configuration |
 | `config/agents.json` | Agent definition + permissions |
 | `entrypoint.sh` | Syncs baked-in plugin to mounted volume on boot |
@@ -91,12 +122,12 @@ See `docs/plans/2026-03-04-hetzner-deployment-design.md` for the full design.
 
 - **TypeScript tools** in `plugin-src/` follow the Omniclaw factory-function + TypeBox pattern
 - **Python sidecar** (`scraper/`) runs FastAPI + JobSpy for multi-site scraping
-- **USCIS H-1B data** downloaded by `setup.sh` for visa sponsor checking
+- **USCIS H-1B data** downloaded by setup scripts for visa sponsor checking
 - **Google Sheets tracking** via the existing Omniclaw OAuth flow
 
 ### Setup
 
-The `setup.sh` script automatically downloads USCIS H-1B employer data. The job scraper sidecar starts alongside the gateway via `docker-compose.yml`.
+Both `setup-mac.sh` and `setup-vps.sh` automatically download USCIS H-1B employer data. The job scraper sidecar starts alongside the gateway via `docker-compose.yml`.
 
 To activate job tools in the upstream Omniclaw plugin, apply the patch references in `plugin-src/src/mcp/`:
 - `tool-registry-jobs-patch.ts` — imports and registration calls

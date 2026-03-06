@@ -9,3 +9,7 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Mac local setup (created by setup-mac.sh)
+local-config/
+local-workspace/
