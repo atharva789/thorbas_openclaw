@@ -28,6 +28,8 @@ RUN apt-get update && \
 # it into the mounted extensions dir on first boot.
 USER root
 RUN mkdir -p /opt/omniclaw && chown node:node /opt/omniclaw
+# Omniclaw postinstall symlinks into ~/.openclaw — create it so npm install succeeds
+RUN mkdir -p /home/node/.openclaw && chown node:node /home/node/.openclaw
 
 USER node
 RUN git clone --depth 1 https://github.com/mxy680/omniclaw.git \
