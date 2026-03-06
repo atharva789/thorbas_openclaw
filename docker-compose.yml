@@ -32,8 +32,10 @@ services:
       - ${OPENCLAW_CONFIG_DIR:-/opt/openclaw/config}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/opt/openclaw/workspace}:/home/node/.openclaw/workspace
     ports:
-      # Expose only on localhost. Access via SSH port forward.
+      # Gateway API (tunneled via ngrok for Telegram)
       - "127.0.0.1:18789:18789"
+      # OAuth callback (one-time Google auth flow)
+      - "127.0.0.1:9753:9753"
     init: true
     restart: unless-stopped
     healthcheck:
