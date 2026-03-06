@@ -17,7 +17,8 @@
           "slides",
           "youtube",
           "github",
-          "schedule"
+          "schedule",
+          "jobs"
         ]
       },
       "workspace": "/home/node/.openclaw/workspace"

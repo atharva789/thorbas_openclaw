@@ -112,6 +112,25 @@ else
     echo "==> Swap already exists, skipping..."
 fi
 
+# -- 7b. Download USCIS H-1B Employer Data --------------------
+echo ""
+echo "==> Downloading USCIS H-1B employer data..."
+USCIS_DIR="$WORKSPACE_DIR/uscis"
+sudo mkdir -p "$USCIS_DIR"
+sudo chown 1000:1000 "$USCIS_DIR"
+USCIS_CSV="$USCIS_DIR/h1b_data.csv"
+if [ ! -f "$USCIS_CSV" ]; then
+    curl -fsSL -o "$USCIS_CSV" \
+        "https://www.uscis.gov/sites/default/files/document/data/h1b_datahubexport-All.csv" \
+        2>/dev/null || {
+        echo "WARNING: Could not download USCIS H-1B data."
+        echo "The visa-sponsor-check tool will return 'unknown' for all companies."
+        echo "You can manually place the CSV at: $USCIS_CSV"
+    }
+else
+    echo "    USCIS H-1B data already present, skipping download."
+fi
+
 # -- 8. Build Docker image ------------------------------------
 echo "==> Building custom OpenClaw image (this takes a few minutes)..."
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" build

@@ -22,6 +22,12 @@ services:
       OMNICLAW_TOKENS_PATH: ${OMNICLAW_TOKENS_PATH:-/home/node/.openclaw/omniclaw-tokens.json}
       # Playwright browser path
       PLAYWRIGHT_BROWSERS_PATH: /home/node/.cache/ms-playwright
+      # Job Automation
+      JOB_SCRAPER_URL: http://job-scraper:8787
+      JOB_TRACKER_SHEET_ID: ${JOB_TRACKER_SHEET_ID:-1EHOO6p87ERIgvmTkiSbn9kG__lSeStpwf8uV4Y-soS4}
+    depends_on:
+      job-scraper:
+        condition: service_healthy
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-/opt/openclaw/config}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/opt/openclaw/workspace}:/home/node/.openclaw/workspace
@@ -47,3 +53,21 @@ services:
       resources:
         limits:
           memory: 3G
+
+  job-scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8787"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8787/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
