@@ -120,13 +120,31 @@ sudo mkdir -p "$USCIS_DIR"
 sudo chown 1000:1000 "$USCIS_DIR"
 USCIS_CSV="$USCIS_DIR/h1b_data.csv"
 if [ ! -f "$USCIS_CSV" ]; then
-    curl -fsSL -o "$USCIS_CSV" \
-        "https://www.uscis.gov/sites/default/files/document/data/h1b_datahubexport-All.csv" \
-        2>/dev/null || {
-        echo "WARNING: Could not download USCIS H-1B data."
+    USCIS_BASE="https://www.uscis.gov/sites/default/files/document/data"
+    HEADER_WRITTEN=false
+    for YEAR in 2023 2022 2021 2020 2019; do
+        echo "    Downloading FY${YEAR}..."
+        TMP_CSV=$(mktemp)
+        if curl -fsSL -o "$TMP_CSV" "${USCIS_BASE}/h1b_datahubexport-${YEAR}.csv" 2>/dev/null; then
+            if [ "$HEADER_WRITTEN" = false ]; then
+                cat "$TMP_CSV" >> "$USCIS_CSV"
+                HEADER_WRITTEN=true
+            else
+                tail -n +2 "$TMP_CSV" >> "$USCIS_CSV"
+            fi
+        else
+            echo "    WARNING: Could not download FY${YEAR} data, skipping."
+        fi
+        rm -f "$TMP_CSV"
+    done
+    if [ ! -f "$USCIS_CSV" ] || [ ! -s "$USCIS_CSV" ]; then
+        echo "WARNING: Could not download any USCIS H-1B data."
         echo "The visa-sponsor-check tool will return 'unknown' for all companies."
         echo "You can manually place the CSV at: $USCIS_CSV"
-    }
+    else
+        sudo chown 1000:1000 "$USCIS_CSV"
+        echo "    USCIS H-1B data saved to $USCIS_CSV"
+    fi
 else
     echo "    USCIS H-1B data already present, skipping download."
 fi
