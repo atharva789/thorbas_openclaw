@@ -35,8 +35,8 @@ USER node
 RUN git clone --depth 1 https://github.com/mxy680/omniclaw.git \
         /opt/omniclaw/plugin && \
     cd /opt/omniclaw/plugin && \
-    npm install && \
-    npx tsc && \
+    npm install --include=dev && \
+    npm run build && \
     npm prune --production && \
     rm -rf .git
 
