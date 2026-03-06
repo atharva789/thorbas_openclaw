@@ -38,8 +38,10 @@ cp /path/to/client_secret.json local-config/
 # Start:
 docker compose up -d
 
-# One-time Google OAuth (opens in your browser):
-docker compose exec openclaw-gateway openclaw plugins config omniclaw
+# One-time Google OAuth — run directly in the container (no agent timeout):
+docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+# Open the printed URL in your browser, sign in, grant access.
+# The script exits automatically once tokens are saved.
 
 # Start ngrok tunnel (for Telegram):
 ngrok http 18789
@@ -73,9 +75,12 @@ docker compose up -d
 docker compose exec openclaw-gateway \
   openclaw channels add --channel telegram --token YOUR_BOT_TOKEN
 
-# One-time Google OAuth (from laptop):
+# One-time Google OAuth — SSH-tunnel port 9753, then run the CLI script:
 ssh -L 9753:localhost:9753 user@<vps-ip>
-docker compose exec openclaw-gateway openclaw plugins config omniclaw
+# In a second terminal (still on your laptop):
+docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+# Open the printed URL in your browser, sign in, grant access.
+# The script exits automatically once tokens are saved.
 ```
 
 ## Architecture
@@ -142,6 +147,42 @@ Check if Google sponsors H-1B visas
 Apply to job 12345 on Greenhouse board acmecorp
 Search HN Who's Hiring for visa sponsor positions
 ```
+
+## Google OAuth
+
+The bot's Gmail/Calendar/Drive tools require a one-time OAuth flow that must be
+completed **outside the agent loop**. The `gmail_auth_setup` tool (called from
+Telegram) starts an OAuth server on port 9753 inside the container, but the
+LLM's 2-minute response timeout kills the agent before the browser flow can
+finish, leaving the port bound until the next container restart.
+
+**Use the CLI script instead:**
+
+```bash
+# macOS — port 9753 is already forwarded to localhost:
+docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+
+# VPS — SSH-tunnel the port first, then run from a second terminal:
+ssh -L 9753:localhost:9753 user@<vps-ip>
+docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+```
+
+The script:
+1. Prints a Google auth URL — open it in your browser and grant access
+2. Receives the OAuth callback on port 9753 (no timeout)
+3. Saves tokens to `/home/node/.openclaw/omniclaw-tokens.json`
+4. Exits cleanly
+
+If the script fails with **port already in use** (from a previous failed attempt):
+
+```bash
+docker compose restart openclaw-gateway
+docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+```
+
+If Google does not issue a `refresh_token`, revoke the app at
+<https://myaccount.google.com/permissions> and re-run — the script uses
+`prompt: consent` which forces a new refresh token on every run.
 
 ## Maintenance
 

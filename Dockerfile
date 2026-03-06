@@ -40,11 +40,14 @@ RUN git clone --depth 1 https://github.com/mxy680/omniclaw.git \
     npm prune --production && \
     rm -rf .git
 
-# -- Entrypoint wrapper ----------------------------------------
+# -- Entrypoint wrapper + OAuth setup CLI ----------------------
 # Copies baked-in extensions to the mounted config volume on boot,
 # then starts the OpenClaw Gateway.
+# google-oauth-setup.js runs the Google OAuth flow directly from the
+# CLI (no agent, no LLM timeout) so port 9753 is never abandoned mid-flow.
 USER root
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY scripts/google-oauth-setup.js /usr/local/bin/google-oauth-setup.js
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # -- Runtime ---------------------------------------------------
