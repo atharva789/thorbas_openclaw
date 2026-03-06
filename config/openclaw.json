@@ -5,7 +5,7 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-sonnet-4-6"
+        "primary": "google/gemini-2.5-flash"
       }
     }
   },
@@ -13,6 +13,18 @@
     "telegram": {
       "enabled": true,
       "dmPolicy": "pairing"
+    }
+  },
+  "plugins": {
+    "entries": {
+      "omniclaw": {
+        "enabled": true,
+        "config": {
+          "client_secret_path": "/home/node/.openclaw/client_secret.json",
+          "tokens_path": "/home/node/.openclaw/omniclaw-tokens.json",
+          "oauth_port": 9753
+        }
+      }
     }
   }
 }
