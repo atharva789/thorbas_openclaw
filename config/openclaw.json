@@ -1,29 +1,18 @@
 {
   "gateway": {
-    "mode": "local",
-    "bind": "lan",
-    "auth": {
-      "token": ""
-    }
+    "bind": "lan"
   },
-  "providers": {
-    "default": "anthropic",
-    "anthropic": {
-      "model": "claude-sonnet-4-6"
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6"
+      }
     }
   },
   "channels": {
     "telegram": {
-      "enabled": true
-    }
-  },
-  "plugins": {
-    "omniclaw": {
       "enabled": true,
-      "config": {
-        "client_secret_path": "/home/node/.openclaw/client_secret.json",
-        "tokens_path": "/home/node/.openclaw/omniclaw-tokens.json"
-      }
+      "dmPolicy": "pairing"
     }
   }
 }
