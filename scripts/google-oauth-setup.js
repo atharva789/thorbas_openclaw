@@ -7,6 +7,7 @@
  *
  * Usage (from the host):
  *   docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js
+ *   docker compose exec -it openclaw-gateway node /usr/local/bin/google-oauth-setup.js --account school
  *
  * If port 9753 is already bound from a previous failed attempt, restart
  * the container first:
@@ -19,6 +20,13 @@
 const http = require('http');
 const fs = require('fs');
 const { URL } = require('url');
+
+// ── CLI args ─────────────────────────────────────────────────────────────────
+// Usage: node google-oauth-setup.js [--account <name>]
+// Defaults to "default" so existing callers are unaffected.
+const _args = process.argv.slice(2);
+const _acctIdx = _args.indexOf('--account');
+const TARGET_ACCOUNT = _acctIdx >= 0 && _args[_acctIdx + 1] ? _args[_acctIdx + 1] : 'default';
 
 // ── Config (mirrors openclaw.json plugin config) ────────────────────────────
 const CLIENT_SECRET_PATH =
@@ -41,6 +49,8 @@ const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/presentations',
   'https://www.googleapis.com/auth/youtube.readonly',
+  'https://www.googleapis.com/auth/forms.body',
+  'https://www.googleapis.com/auth/forms.responses.readonly',
   'openid',
   'email',
   'profile',
@@ -131,8 +141,13 @@ const server = http.createServer(async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
 
-    // Persist tokens — same path omniclaw reads at startup
-    fs.writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2), { mode: 0o600 });
+    // Persist tokens in the format omniclaw expects: { "<account>": { ...tokens } }
+    // The plugin's TokenStore.get(account) looks up data[account], defaulting to "default".
+    const account = TARGET_ACCOUNT;
+    let existing = {};
+    try { existing = JSON.parse(fs.readFileSync(TOKENS_PATH, 'utf8')); } catch {}
+    existing[account] = tokens;
+    fs.writeFileSync(TOKENS_PATH, JSON.stringify(existing, null, 2), { mode: 0o600 });
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
@@ -143,14 +158,14 @@ const server = http.createServer(async (req, res) => {
       </body></html>
     `);
 
-    console.log('\n\u2713 Success! Tokens saved to:', TOKENS_PATH);
+    console.log(`\n\u2713 Success! Tokens saved to: ${TOKENS_PATH} (account: "${TARGET_ACCOUNT}")`);
     if (tokens.refresh_token) {
       console.log('  refresh_token present — long-lived access granted.');
     } else {
       console.log('  WARNING: no refresh_token returned.');
       console.log('  Go to https://myaccount.google.com/permissions, revoke this app, and re-run.');
     }
-    console.log('\nOmniclaw is now authorized. Gmail, Calendar, Drive, etc. are ready.');
+    console.log(`\nOmniclaw is now authorized for account "${TARGET_ACCOUNT}". Gmail, Calendar, Drive, etc. are ready.`);
 
     server.close(() => process.exit(0));
   } catch (err) {
@@ -174,6 +189,28 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
+// Kill any stale listener on the OAuth port before binding
+function killStalePort(port) {
+  return new Promise((resolve) => {
+    const net = require('net');
+    const probe = net.createServer();
+    probe.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`[oauth-setup] Port ${port} in use — killing stale listener...`);
+        const sock = new net.Socket();
+        sock.once('connect', () => { sock.destroy(); setTimeout(resolve, 300); });
+        sock.once('error', () => resolve());
+        sock.connect(port, '127.0.0.1');
+      } else {
+        resolve();
+      }
+    });
+    probe.once('listening', () => { probe.close(resolve); });
+    probe.listen(port);
+  });
+}
+
+killStalePort(OAUTH_PORT).then(() => {
 server.listen(OAUTH_PORT, '0.0.0.0', () => {
   console.log('='.repeat(62));
   console.log('  Google OAuth Setup for Omniclaw');
@@ -188,3 +225,4 @@ server.listen(OAUTH_PORT, '0.0.0.0', () => {
   console.log(`Waiting for callback on port ${OAUTH_PORT} — no timeout.`);
   console.log('');
 });
+}); // end killStalePort().then()

@@ -19,6 +19,7 @@ RUN apt-get update && \
     PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
         node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \
     chown -R node:node /home/node/.cache/ms-playwright && \
+    ln -sf /home/node/.cache/ms-playwright/chromium-*/chrome-linux/chrome /usr/bin/chromium && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 

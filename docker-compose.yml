@@ -9,10 +9,6 @@ services:
       # Gateway auth
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
-      # Model provider
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       # Telegram
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       # GitHub (optional)
@@ -25,12 +21,18 @@ services:
       # Job Automation
       JOB_SCRAPER_URL: http://job-scraper:8787
       JOB_TRACKER_SHEET_ID: ${JOB_TRACKER_SHEET_ID:-1EHOO6p87ERIgvmTkiSbn9kG__lSeStpwf8uV4Y-soS4}
+    # Load API keys directly from .env file to avoid shell env var shadowing
+    # (e.g. Claude Code exports ANTHROPIC_API_KEY="" which would override .env)
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       job-scraper:
         condition: service_healthy
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-/opt/openclaw/config}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/opt/openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${JOBBOARD_PASSWORDS_FILE:-/dev/null}:/run/secrets/jobboard-passwords.json:ro
     ports:
       # Gateway API (tunneled via ngrok for Telegram)
       - "127.0.0.1:18789:18789"
