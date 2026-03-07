@@ -3,6 +3,7 @@
 # =============================================================
 # Extends the official OpenClaw image with:
 #   - Chromium + Xvfb (for web browsing)
+#   - TeX Live + poppler (for LaTeX compilation + PDF text extraction)
 #   - Omniclaw plugin (Google Workspace + GitHub tools)
 #   - Entrypoint that syncs baked-in extensions to mounted volume
 # =============================================================
@@ -14,7 +15,10 @@ FROM ghcr.io/openclaw/openclaw:latest
 USER root
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        xvfb git && \
+        xvfb git \
+        texlive-latex-base texlive-latex-recommended texlive-fonts-recommended \
+        texlive-xetex lmodern pandoc \
+        poppler-utils && \
     mkdir -p /home/node/.cache/ms-playwright && \
     PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright \
         node /app/node_modules/playwright-core/cli.js install --with-deps chromium && \

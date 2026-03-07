@@ -60,6 +60,12 @@ if [ -z "$NGROK_URL" ]; then
     exit 1
 fi
 
+# Read gateway token from .env for display
+GW_TOKEN=""
+if [ -f ".env" ]; then
+    GW_TOKEN=$(grep -m1 '^OPENCLAW_GATEWAY_TOKEN=' .env 2>/dev/null | cut -d= -f2 || true)
+fi
+
 echo ""
 echo "=============================================="
 echo "  OpenClaw Web UI"
@@ -67,12 +73,17 @@ echo "=============================================="
 echo ""
 echo "  Public URL:  $NGROK_URL"
 echo "  Local URL:   http://localhost:${GATEWAY_PORT}"
-echo "  Auth:        ${NGROK_AUTH}"
+echo "  Basic Auth:  ${NGROK_AUTH}"
 echo "  ngrok PID:   $NGROK_PID"
 echo ""
 echo "  Open on your phone: $NGROK_URL"
-echo "  (you will be prompted for username/password)"
+echo "  (you will be prompted for basic auth username/password)"
 echo ""
+if [ -n "$GW_TOKEN" ]; then
+echo "  GATEWAY TOKEN (paste in Control UI settings):"
+echo "  $GW_TOKEN"
+echo ""
+fi
 echo "  To stop: kill $NGROK_PID"
 echo "=============================================="
 
