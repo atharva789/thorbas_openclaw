@@ -13,3 +13,10 @@ README.md
 # OS
 .DS_Store
 Thumbs.db
+
+# Exclude node_modules everywhere EXCEPT the pre-built plugin
+# (needed so Docker COPY can include it without rebuilding on VPS)
+node_modules
+scraper/.venv
+scraper/__pycache__
+!local-config/extensions/omniclaw/node_modules
